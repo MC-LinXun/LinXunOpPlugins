@@ -1,4 +1,4 @@
 AutoTime:
-  InstantlyTime: 1200
-  DelayTime: 18000
+  InstantlyTime: 300
+  DelayTime: 900
   CountDownTime: 5

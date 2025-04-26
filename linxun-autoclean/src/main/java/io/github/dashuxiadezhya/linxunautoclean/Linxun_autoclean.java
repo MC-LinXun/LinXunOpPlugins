@@ -17,15 +17,14 @@ public final class Linxun_autoclean extends JavaPlugin {
     private BukkitTask confirmTask;
     public static final String SYSTEM_MESSAGE = ChatColor.RED + "[凌寻] " + ChatColor.YELLOW;
 
-    // 定义枚举指令
     private enum CleanCommand {
-        START, STOP, CLEAN, REVISE, RELOAD, STATUS
+        START, STOP, CLEAN, REVISE, RELOAD, STATUS, PRINT
     }
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"已加载扫地姬   "+ "当前版本：" + getDescription().getVersion());  // 给服务器控制台发送加载信息
-        this.getCommand("linxun_cleanItem").setExecutor(this);//getCommand：注册指令  setExecutor: 在那个插件执行
+        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"已加载扫地姬   "+ "当前版本：" + getDescription().getVersion());
+        this.getCommand("linxun_cleanItem").setExecutor(this);
         this.getCommand("linxun_cleanItem").setTabCompleter(this);
         currentCountdown = getConfig().getInt("AutoTime.CountDownTime");
         OpenClean();
@@ -42,12 +41,14 @@ public final class Linxun_autoclean extends JavaPlugin {
 
         //无参数显示帮助
         if (args.length == 0) {
-            sender.sendMessage(SYSTEM_MESSAGE+"扫地姬使用帮助:");
-            sender.sendMessage(ChatColor.RED + "/linxun_cleanItem start - 开启定期清理");
-            sender.sendMessage(ChatColor.RED + "/linxun_cleanItem stop - 停止定期清理");
-            sender.sendMessage(ChatColor.RED + "/linxun_cleanItem clean - 立即清理掉落物");
-            sender.sendMessage(ChatColor.RED + "/linxun_cleanItem revise - 修改配置信息");
-            sender.sendMessage(ChatColor.RED + "/linxun_cleanItem status - 查看当前状态");
+            sender.sendMessage(SYSTEM_MESSAGE+"扫地姬使用帮助:\n" +
+                    ChatColor.RED +
+                    "/linxun_cleanItem start - 开启定期清理\n" +
+                    "/linxun_cleanItem stop - 停止定期清理\n" +
+                    "/linxun_cleanItem clean - 立即清理掉落物\n" +
+                    "/linxun_cleanItem revise - 修改配置信息\n" +
+                    "/linxun_cleanItem status - 查看当前状态\n" +
+                    "/linxun_cleanItem print - 打印配置信息");
             return true;
         }
 
@@ -71,6 +72,9 @@ public final class Linxun_autoclean extends JavaPlugin {
                     break;
                 case STATUS:
                     handleStatusCommand(sender);
+                    break;
+                case PRINT:
+                    handlePrintCommand(sender);
                     break;
                 default:
                     sender.sendMessage(SYSTEM_MESSAGE +"未知指令，请输入/linxun_cleanItem来查看帮助");
@@ -109,6 +113,11 @@ public final class Linxun_autoclean extends JavaPlugin {
         }
         return completions;
     }
+    //打印配置信息
+    private void handlePrintCommand(CommandSender sender) {
+            sender.sendMessage("调试 - 完整配置: \n" + getConfig().saveToString());
+    }
+
     // 操作状态
     private void handleStatusCommand(CommandSender sender) {
         sender.sendMessage(isCleanRunning ?ChatColor.GREEN + "已开启" :ChatColor.RED +"已关闭");
@@ -141,31 +150,18 @@ public final class Linxun_autoclean extends JavaPlugin {
                 return;
             }
             String AutoTimeConfig = "AutoTime."+args[1];
-            if (!getConfig().contains(AutoTimeConfig)) {
-                sender.sendMessage(SYSTEM_MESSAGE +"配置项目错误,请输入/linxun_cleanItem revise查看用法");
-                sender.sendMessage("调试 - 完整配置: " + getConfig().saveToString()); // 打印全部配置
-                sender.sendMessage("调试 - 尝试访问路径: " + AutoTimeConfig);
-                sender.sendMessage("输入参数长度: " + args[1].length());
-                getLogger().info("AutoTime节点是否存在: " + getConfig().contains("AutoTime"));
-                getLogger().info("AutoTime内容: " + getConfig().getConfigurationSection("AutoTime"));
-                return;
-            }
             if (!args[2].matches("\\d+")) {
                 sender.sendMessage(SYSTEM_MESSAGE +"必须输入整数数字");
                 return;
             }
             if (args[1].equals("CountDownTime")){
-                int CountInt =  Integer.parseInt(args[2]);
-                getConfig().set(AutoTimeConfig, CountInt);
+                getConfig().set(AutoTimeConfig, Integer.parseInt(args[2]));
                 isConfigValid = false;
                 sender.sendMessage(SYSTEM_MESSAGE +"配置信息AutoTime." +ChatColor.RED + args[1] + "修改为："+ChatColor.RED + args[2]);
                 sender.sendMessage(SYSTEM_MESSAGE +"请输入/linxun_cleanItem reload重载配置");
                 return;
             }
-            //秒 转 tick
-            long second = Long.parseLong(args[2]);
-            long ticks = second * 20L;
-            getConfig().set(AutoTimeConfig, ticks);
+            getConfig().set(AutoTimeConfig, Long.parseLong(args[2]));
             isConfigValid = false;
             sender.sendMessage(SYSTEM_MESSAGE +"配置信息AutoTime." +ChatColor.RED + args[1] + "修改为："+ChatColor.RED + args[2]);
             sender.sendMessage(SYSTEM_MESSAGE +"请输入/linxun_cleanItem reload重载配置");
@@ -176,6 +172,10 @@ public final class Linxun_autoclean extends JavaPlugin {
     private void handleCleanCommand(CommandSender sender, String[] args) {
         //首次输入
         if (args.length == 1){
+            if (isConfirmPending){
+                sender.sendMessage(SYSTEM_MESSAGE +"重复清理给你服崩了");
+                return;
+            }
             sender.sendMessage(SYSTEM_MESSAGE +"请在10秒内输入/linxun_cleanItem clean confirm来确认清理");
             isConfirmPending = true;
             confirmTask = Bukkit.getScheduler().runTaskLater(this,()->{
@@ -221,7 +221,10 @@ public final class Linxun_autoclean extends JavaPlugin {
         sender.sendMessage(SYSTEM_MESSAGE +"扫地姬已开启");
     }
     // 初次执行清理指令
-    private void OpenClean () {CleanSchedulerID = Bukkit.getScheduler().scheduleSyncRepeatingTask(this ,this::CountDown,getConfig().getLong("AutoTime.InstantlyTime"), getConfig().getLong("AutoTime.DelayTime"));}
+    private void OpenClean () {
+        CleanSchedulerID = Bukkit.getScheduler().scheduleSyncRepeatingTask(
+         this, this::CountDown,getConfig().getLong("AutoTime.InstantlyTime")*20, getConfig().getLong("AutoTime.DelayTime")*20);
+    }
 
     //手动关闭
     private void handleStopCommand (CommandSender sender) {
