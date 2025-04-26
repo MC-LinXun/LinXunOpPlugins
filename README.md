@@ -1,4 +1,4 @@
-# 🧹 凌寻扫地姬 (Linxun AutoClean) - 自动清理插件
+# 🧹 扫地姬 (AutoClean) - 自动清理插件
 
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.12.2+-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue)
