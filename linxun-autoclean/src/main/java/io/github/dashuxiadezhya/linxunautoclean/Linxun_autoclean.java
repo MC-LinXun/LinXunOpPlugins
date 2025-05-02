@@ -24,6 +24,7 @@ public final class Linxun_autoclean extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"已加载扫地姬   "+ "当前版本：" + getDescription().getVersion());
+        getLogger().info("Linxun 扫地姬 插件已启动!");
         this.getCommand("linxun_cleanItem").setExecutor(this);
         this.getCommand("linxun_cleanItem").setTabCompleter(this);
         currentCountdown = getConfig().getInt("AutoTime.CountDownTime");
@@ -276,5 +277,6 @@ public final class Linxun_autoclean extends JavaPlugin {
         Bukkit.getScheduler().cancelTask(CleanSchedulerID);
         Bukkit.getScheduler().cancelTask(CleanCountDownSchedulerID);
         Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"已卸载定期清理掉落物插件");
+        getLogger().info("Linxun 扫地姬 插件已禁用!");
     }
 }
