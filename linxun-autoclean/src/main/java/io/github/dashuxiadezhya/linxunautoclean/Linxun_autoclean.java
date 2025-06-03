@@ -1,12 +1,17 @@
 package io.github.dashuxiadezhya.linxunautoclean;
 import org.bukkit.*;
 import org.bukkit.command.*;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.scheduler.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
 public final class Linxun_autoclean extends JavaPlugin {
     private boolean isCleanRunning = true;
     private boolean isConfigValid = true;
@@ -15,19 +20,21 @@ public final class Linxun_autoclean extends JavaPlugin {
     private int CleanCountDownSchedulerID = -1;
     private int currentCountdown;
     private BukkitTask confirmTask;
+    private FileConfiguration config;
+    private GeFileDetect geFileDetect;
     public static final String SYSTEM_MESSAGE = ChatColor.RED + "[凌寻] " + ChatColor.YELLOW;
 
-    private enum CleanCommand {
+    private enum eCleanCommand {
         START, STOP, CLEAN, REVISE, RELOAD, STATUS, PRINT
     }
     @Override
     public void onEnable() {
-        saveDefaultConfig();
-        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"已加载扫地姬   "+ "当前版本：" + getDescription().getVersion());
-        getLogger().info("Linxun 扫地姬 插件已启动!");
+        geFileDetect = new GeFileDetect(this);
+          config = geFileDetect.CreateFileVe();
+        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"加载扫地姬   "+ "当前版本：" + getDescription().getVersion());
         this.getCommand("linxun_cleanItem").setExecutor(this);
         this.getCommand("linxun_cleanItem").setTabCompleter(this);
-        currentCountdown = getConfig().getInt("AutoTime.CountDownTime");
+        currentCountdown = config.getInt("AutoTime.CountDownTime");
         OpenClean();
     }
 
@@ -54,7 +61,7 @@ public final class Linxun_autoclean extends JavaPlugin {
         }
 
         try {
-            CleanCommand cleanCmd = CleanCommand.valueOf(args[0].toUpperCase());
+            eCleanCommand cleanCmd = eCleanCommand.valueOf(args[0].toUpperCase());
             switch (cleanCmd) {
                 case START:
                     handleStartCommand(sender);
@@ -96,7 +103,7 @@ public final class Linxun_autoclean extends JavaPlugin {
         }
         //第一个输入的参数
         if (args.length == 1){
-            completions = Arrays.stream(CleanCommand.values())
+            completions = Arrays.stream(eCleanCommand.values())
                     .map(Enum::name)
                     .map(String::toLowerCase)
                     .filter(s -> s.isEmpty() || s.startsWith(args[0].toLowerCase()))
@@ -104,7 +111,7 @@ public final class Linxun_autoclean extends JavaPlugin {
             //第二个输入的参数
         } else if (args.length == 2 && args[0].equalsIgnoreCase("revise")) {
             //获取相关配置节点下的键值 用来补全参数
-            ConfigurationSection autoTimeSection = getConfig().getConfigurationSection("AutoTime"); // ConfigurationSection 指config配置的节点
+            ConfigurationSection autoTimeSection = config.getConfigurationSection("AutoTime"); // ConfigurationSection 指config配置的节点
             if (autoTimeSection != null) {
                 completions.addAll(autoTimeSection.getKeys(false));  // getkeys （false） 表示 只获取节点下的 键值 （true）表示 获取节点的完整路径
                 if (!args[1].isEmpty()) {
@@ -116,7 +123,7 @@ public final class Linxun_autoclean extends JavaPlugin {
     }
     //打印配置信息
     private void handlePrintCommand(CommandSender sender) {
-            sender.sendMessage("调试 - 完整配置: \n" + getConfig().saveToString());
+            sender.sendMessage("调试 - 完整配置: \n" + config.saveToString());
     }
 
     // 操作状态
@@ -129,12 +136,19 @@ public final class Linxun_autoclean extends JavaPlugin {
             sender.sendMessage(SYSTEM_MESSAGE +"请先使用/linxun_cleanItem stop来暂停清理");
             return;
         }
+        //游戏修改/文件修改
         if (!isConfigValid){
-            saveConfig();
-            reloadConfig();
+            try {
+                geFileDetect.memorySave();
+            }catch (IOException e){
+                geFileDetect.errorPrint("配置文件修改失败");
+                Bukkit.getConsoleSender().sendMessage(ChatColor.RED +"异常："+e);
+                isConfigValid = false;
+                return;
+            }
             isConfigValid = true;
         }else{
-            reloadConfig();
+            config = geFileDetect.diskSave();
         }
         sender.sendMessage(SYSTEM_MESSAGE +"已重载配置");
         sender.sendMessage(SYSTEM_MESSAGE +"tips：指令修改优先级比手动修改高，指令修改会覆盖手动修改的配置");
@@ -156,13 +170,13 @@ public final class Linxun_autoclean extends JavaPlugin {
                 return;
             }
             if (args[1].equals("CountDownTime")){
-                getConfig().set(AutoTimeConfig, Integer.parseInt(args[2]));
+                config.set(AutoTimeConfig, Integer.parseInt(args[2]));
                 isConfigValid = false;
                 sender.sendMessage(SYSTEM_MESSAGE +"配置信息AutoTime." +ChatColor.RED + args[1] + "修改为："+ChatColor.RED + args[2]);
                 sender.sendMessage(SYSTEM_MESSAGE +"请输入/linxun_cleanItem reload重载配置");
                 return;
             }
-            getConfig().set(AutoTimeConfig, Long.parseLong(args[2]));
+            config.set(AutoTimeConfig, Long.parseLong(args[2]));
             isConfigValid = false;
             sender.sendMessage(SYSTEM_MESSAGE +"配置信息AutoTime." +ChatColor.RED + args[1] + "修改为："+ChatColor.RED + args[2]);
             sender.sendMessage(SYSTEM_MESSAGE +"请输入/linxun_cleanItem reload重载配置");
@@ -218,13 +232,13 @@ public final class Linxun_autoclean extends JavaPlugin {
         }
         OpenClean();
         isCleanRunning = true;
-        currentCountdown = getConfig().getInt("AutoTime.CountDownTime");
+        currentCountdown = config.getInt("AutoTime.CountDownTime");
         sender.sendMessage(SYSTEM_MESSAGE +"扫地姬已开启");
     }
     // 初次执行清理指令
     private void OpenClean () {
         CleanSchedulerID = Bukkit.getScheduler().scheduleSyncRepeatingTask(
-         this, this::CountDown,getConfig().getLong("AutoTime.InstantlyTime")*20, getConfig().getLong("AutoTime.DelayTime")*20);
+         this, this::CountDown,config.getLong("AutoTime.InstantlyTime")*20, config.getLong("AutoTime.DelayTime")*20);
     }
 
     //手动关闭
@@ -238,7 +252,7 @@ public final class Linxun_autoclean extends JavaPlugin {
         CleanSchedulerID = -1;
         CleanCountDownSchedulerID = -1;
         isCleanRunning = false;
-        currentCountdown = getConfig().getInt("AutoTime.CountDownTime");
+        currentCountdown = config.getInt("AutoTime.CountDownTime");
         sender.sendMessage(SYSTEM_MESSAGE +"扫地姬已关闭");
     }
     //立即清理掉落物
@@ -264,7 +278,7 @@ public final class Linxun_autoclean extends JavaPlugin {
                 currentCountdown--;
             }else {
                 InstantClean();
-                currentCountdown = getConfig().getInt("AutoTime.CountDownTime");
+                currentCountdown = config.getInt("AutoTime.CountDownTime");
                 Bukkit.getScheduler().cancelTask(CleanCountDownSchedulerID);
                 CleanCountDownSchedulerID = -1;
             }
@@ -276,7 +290,6 @@ public final class Linxun_autoclean extends JavaPlugin {
         // Plugin shutdown logic
         Bukkit.getScheduler().cancelTask(CleanSchedulerID);
         Bukkit.getScheduler().cancelTask(CleanCountDownSchedulerID);
-        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"已卸载定期清理掉落物插件");
-        getLogger().info("Linxun 扫地姬 插件已禁用!");
+        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+"卸载扫地姬   "+ "当前版本：" + getDescription().getVersion());
     }
 }
