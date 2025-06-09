@@ -1,9 +1,0 @@
-name: linxun-autoclean
-version: '${project.version}'
-main: io.github.dashuxiadezhya.linxunautoclean.Linxun_autoclean
-api-version: "1.12"
-authors: [LinXun]
-description: 自动清理掉落物
-commands:
-  linxun_cleanItem:
-    usage: "/linxun_cleanItem [start|stop|clean|revise|reload|status|print]"
