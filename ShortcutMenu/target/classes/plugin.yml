@@ -1,0 +1,10 @@
+name: ShortcutMenu
+version: '1.0'
+main: io.github.dashuxiadezhya.shortcutmenu.ShortcutMenu
+authors: [凌寻]
+description: 自定义快捷菜单
+website: https://www.minebbs.com/members/166623/
+commands:
+  Linxun_menu:
+    description: 打开配置的自定义菜单
+    usage: /Linxun_menu [hub|kill|reload|help]

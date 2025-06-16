@@ -1,0 +1,81 @@
+menus:
+  menu_main: #菜单ID
+    title: "自定义菜单" #菜单名称 可使用颜色代码&
+    size: 54  #可选物品格 9 18 27 36 45 54
+    back: #覆盖物品 可留空
+    short: 0 #染色方块可选颜色  0白色 1橙色 2品红色 3淡蓝色 4黄色 5黄绿色 6粉红色 7灰色 8淡灰色 9青色 10紫色 11蓝色 12棕色 13绿色 14红色 15黑色
+    buttons: #按钮信息
+      2: #按钮位置
+        material: APPLE #材质
+        name: "&b传送回城" #自定义道具名称
+        lore: #道具描述
+          - "&a点击使用传送回城"
+          - "&c消耗100金币"
+        commands: #指令配置
+          - "^give %player% minecraft:acacia_boat 1" #游戏指令 前缀 ^玩家指令  ~控制台指令  %player% 玩家
+          - "成功执行"  #提示信息
+      4:
+        material: BREAD
+        name: "&b地图传送"
+        lore:
+          - "&a点击打开地图传送"
+          - "&c每次消耗100金币"
+        commands:
+          - "~give %player% minecraft:acacia_boat 1"
+          - "开关清理"
+
+      6:
+        material: COOKED_BEEF
+        name: "&b商店"
+        lore:
+          - "&a自定义商店"
+      8:
+        material: GOLDEN_APPLE
+        name: "&b功能"
+        lore:
+          - "&a自定义功能"
+      20:
+        material: APPLE
+        name: "&b脱离世界"
+        lore:
+          - "&a点击使用脱离世界"
+          - "&c献祭全部血量"
+      22:
+        material: BREAD
+        name: "&b随身仓库"
+        lore:
+          - "&a点击打开随身仓库"
+          - "&c放心存"
+      24:
+        material: COOKED_BEEF
+        name: "&b商店"
+        lore:
+          - "&a自定义商店"
+      26:
+        material: GOLDEN_APPLE
+        name: "&b功能"
+        lore:
+          - "&a自定义功能"
+      38:
+        material: APPLE
+        name: "&b传送回城"
+        lore:
+          - "&a点击使用传送回城"
+          - "&c消耗100金币"
+      40:
+        material: BREAD
+        name: "&b地图传送"
+        lore:
+          - "&a点击打开地图传送"
+          - "&c每次消耗100金币"
+      42:
+        material: COOKED_BEEF
+        name: "&b商店"
+        lore:
+          - "&a自定义商店"
+      44:
+        material: GOLDEN_APPLE
+        name: "&b功能"
+        lore:
+          - "&a自定义功能"
+  menu_1:
