@@ -1,4 +1,4 @@
-package org.example;
+package org.LinXun;
 import org.bukkit.*;
 import org.bukkit.configuration.file.*;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,7 +23,7 @@ public class GeFileDetect {
         Path filePathUrl = Paths.get(
                 plugin.getDataFolder().getParentFile().toString(),
                 "LinXun",
-                plugin.getDescription().getName()
+                    plugin.getDescription().getName()
         );
         File filesUrl = filePathUrl.toFile();
         // 目标文件路径
