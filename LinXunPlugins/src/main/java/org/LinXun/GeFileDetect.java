@@ -64,7 +64,7 @@ public class GeFileDetect {
         config.save(configUrl);
     }
 
-    public void errorPrint(String message) {
+    public static void errorPrint(String message) {
         // 去除颜色代码
         String strippedMessage = ChatColor.stripColor(message);
 
